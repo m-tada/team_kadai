@@ -29,7 +29,8 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements OnInitListener{
+	private TextToSpeech tts;
 	private WebView varWebView;
 	private TextView mView;
 	static private String mArticleTitle[];
@@ -41,8 +42,8 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		tts = new TextToSpeech(getApplicationContext(), this);
 		StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
-
 		getArticle(createURL());
 		ListView list = (ListView)findViewById(R.id.ListView01);
 
@@ -51,15 +52,18 @@ public class MainActivity extends Activity {
 			arrayList.add(new ListItem(mArticleTitle[i],mArticleURL[i],mArticleOverview[i]));
 		}
 
-		//list.setAdapter(new ListArrayAdapter(this,arrayList));
+		list.setAdapter(new ListArrayAdapter(this,arrayList));
 
-		//varWebView =(WebView)findViewById(R.id.webview);
+		varWebView =(WebView)findViewById(R.id.webview);
 		varWebView.setWebViewClient(new CustomBrowserClient());
 		varWebView.getSettings().setJavaScriptEnabled(true);
 
-
 	}
 
+	@Override
+	public void onInit(int status){
+		
+	}
 
 	public String createURL(){
 		String apiURL = "http://news.yahooapis.jp/NewsWebService/V2/topics?";
@@ -67,7 +71,6 @@ public class MainActivity extends Activity {
 		String category ="top";
 		return String.format("%sappid=%s&pickupcategory=%s", apiURL, appid,category);
 	}
-
 
 	public static String httpGet(String strURL){
 		try{
@@ -148,7 +151,9 @@ public class MainActivity extends Activity {
 			this.overview=overview;
 		}
 	}
+	
 	private class CustomBrowserClient extends WebViewClient{
+	
 		public boolean shoudOverrideUrlLoading(WebView view,String url){
 			view.loadUrl(url);
 			return true;
@@ -163,6 +168,7 @@ public class MainActivity extends Activity {
 		}
 		return true;
 	}
+	
 	public boolean onOptionsItemSelected(MenuItem item){
 		super.onOptionsItemSelected(item);
 		int iid=item.getItemId();
@@ -184,19 +190,13 @@ public class MainActivity extends Activity {
 
 
 
-	public class ListArrayAdapter extends ArrayAdapter<ListItem> implements View.OnClickListener, OnInitListener {
+	public class ListArrayAdapter extends ArrayAdapter<ListItem> implements View.OnClickListener {
 		private ArrayList<ListItem> listItem;
-		private TextToSpeech tts;
 		public ListArrayAdapter(Context context, ArrayList<ListItem> listItem){
 			super(context,R.layout.rowitem,listItem);
 			this.listItem=listItem;
-			tts = new TextToSpeech(getApplicationContext(), this);
-
 		}
 
-		@Override
-		public void onInit(int status){
-		}
 
 		@Override
 		public View getView(int positopn,View view, ViewGroup parent){
@@ -204,14 +204,14 @@ public class MainActivity extends Activity {
 			Context context=getContext();
 			LinearLayout linearLayout=new LinearLayout(context);
 			view=linearLayout;
-			Button button=new Button(context);
-			button.setText("日本語");
-			button.setTag(String.valueOf(positopn));
-			button.setOnClickListener(this);
-			linearLayout.addView(button,0);
 			TextView textView= new TextView(context);
 			textView.setText(item.title);
 			linearLayout.addView(textView);
+			Button button=new Button(context);
+			button.setText("詳細");
+			button.setTag(String.valueOf(positopn));
+			button.setOnClickListener(this);
+			linearLayout.addView(button,0);
 
 			return view;
 		}
