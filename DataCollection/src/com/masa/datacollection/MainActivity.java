@@ -11,6 +11,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.speech.tts.TextToSpeech;
@@ -37,33 +38,65 @@ public class MainActivity extends Activity implements OnInitListener{
 	static private String mArticleURL[];
 	static private String mArticleOverview[];
 	static private int mArticleNum;
+	static final private String prefName = "MY_PREF";
+	private int mScreenId = R.layout.activity_main;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
 		tts = new TextToSpeech(getApplicationContext(), this);
 		StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
-		getArticle(createURL());
-		ListView list = (ListView)findViewById(R.id.ListView01);
 
-		ArrayList<ListItem> arrayList = new ArrayList<ListItem>();
-		for(int i=0;i< mArticleNum;i++){
-			arrayList.add(new ListItem(mArticleTitle[i],mArticleURL[i],mArticleOverview[i]));
-		}
-
-		list.setAdapter(new ListArrayAdapter(this,arrayList));
-
-		varWebView =(WebView)findViewById(R.id.webview);
-		varWebView.setWebViewClient(new CustomBrowserClient());
-		varWebView.getSettings().setJavaScriptEnabled(true);
-
+		SharedPreferences prefs = getSharedPreferences(prefName, Context.MODE_PRIVATE);
+		int screenId = prefs.getInt("screenId", R.layout.activity_main);
+		setScreenContent(screenId);
 	}
+
+	  @Override
+	  public void onDestroy() {
+	    super.onDestroy();
+	    SharedPreferences prefs = getSharedPreferences(prefName, Context.MODE_PRIVATE);
+	    SharedPreferences.Editor editor = prefs.edit();
+	    editor.putInt("screenId", mScreenId);
+	    editor.commit();
+	  }
 
 	@Override
 	public void onInit(int status){
-		
+
 	}
+	private void setScreenContent(int screenId) {
+	    mScreenId = screenId;
+	    setContentView(screenId);
+
+	    switch (screenId) {
+	    	case R.layout.activity_main: {
+	    		setFirstScreenContent();
+	    		break;
+	    	}
+	    	case R.layout.webview: {
+	    		setSecondScreenContent();
+	    		break;
+	    	}
+	    }
+	}
+
+
+	  private void setFirstScreenContent() {
+		   getArticle(createURL());
+			ListView list = (ListView)findViewById(R.id.ListView01);
+			ArrayList<ListItem> arrayList = new ArrayList<ListItem>();
+			for(int i=0;i< mArticleNum;i++){
+				arrayList.add(new ListItem(mArticleTitle[i],mArticleURL[i],mArticleOverview[i]));
+			}
+			list.setAdapter(new ListArrayAdapter(this,arrayList));
+	  }
+
+	    private void setSecondScreenContent() {
+			varWebView =(WebView)findViewById(R.id.webview);
+			varWebView.setWebViewClient(new CustomBrowserClient());
+			varWebView.getSettings().setJavaScriptEnabled(true);
+	    }
 
 	public String createURL(){
 		String apiURL = "http://news.yahooapis.jp/NewsWebService/V2/topics?";
@@ -71,6 +104,7 @@ public class MainActivity extends Activity implements OnInitListener{
 		String category ="top";
 		return String.format("%sappid=%s&pickupcategory=%s", apiURL, appid,category);
 	}
+
 
 	public static String httpGet(String strURL){
 		try{
@@ -151,9 +185,8 @@ public class MainActivity extends Activity implements OnInitListener{
 			this.overview=overview;
 		}
 	}
-	
+
 	private class CustomBrowserClient extends WebViewClient{
-	
 		public boolean shoudOverrideUrlLoading(WebView view,String url){
 			view.loadUrl(url);
 			return true;
@@ -168,11 +201,10 @@ public class MainActivity extends Activity implements OnInitListener{
 		}
 		return true;
 	}
-	
 	public boolean onOptionsItemSelected(MenuItem item){
 		super.onOptionsItemSelected(item);
 		int iid=item.getItemId();
-
+		setScreenContent(R.layout.webview);
 		for(int i=0;i < mArticleNum ;i++){
 			if(i==iid){
 				varWebView.loadUrl(mArticleURL[i]);
