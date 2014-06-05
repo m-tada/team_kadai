@@ -5,6 +5,12 @@
     android:orientation="vertical"
     tools:context="${packageName}.${activityClass}" >
 
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:src="@drawable/he" />
+
     <ListView
         android:id="@+id/ListView01"
         android:layout_width="wrap_content"

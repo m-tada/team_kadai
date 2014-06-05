@@ -11,13 +11,13 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Xml;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -38,65 +38,29 @@ public class MainActivity extends Activity implements OnInitListener{
 	static private String mArticleURL[];
 	static private String mArticleOverview[];
 	static private int mArticleNum;
-	static final private String prefName = "MY_PREF";
-	private int mScreenId = R.layout.activity_main;
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
 		tts = new TextToSpeech(getApplicationContext(), this);
 		StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
+		getArticle(createURL());
+		ListView list = (ListView)findViewById(R.id.ListView01);
+		ArrayList<ListItem> arrayList = new ArrayList<ListItem>();
+		for(int i=0;i< mArticleNum;i++){
+			arrayList.add(new ListItem(mArticleTitle[i],mArticleURL[i],mArticleOverview[i]));
+		}
+		list.setAdapter(new ListArrayAdapter(this,arrayList));
 
-		SharedPreferences prefs = getSharedPreferences(prefName, Context.MODE_PRIVATE);
-		int screenId = prefs.getInt("screenId", R.layout.activity_main);
-		setScreenContent(screenId);
 	}
 
-	  @Override
-	  public void onDestroy() {
-	    super.onDestroy();
-	    SharedPreferences prefs = getSharedPreferences(prefName, Context.MODE_PRIVATE);
-	    SharedPreferences.Editor editor = prefs.edit();
-	    editor.putInt("screenId", mScreenId);
-	    editor.commit();
-	  }
 
 	@Override
 	public void onInit(int status){
 
 	}
-	private void setScreenContent(int screenId) {
-	    mScreenId = screenId;
-	    setContentView(screenId);
-
-	    switch (screenId) {
-	    	case R.layout.activity_main: {
-	    		setFirstScreenContent();
-	    		break;
-	    	}
-	    	case R.layout.webview: {
-	    		setSecondScreenContent();
-	    		break;
-	    	}
-	    }
-	}
-
-
-	  private void setFirstScreenContent() {
-		   getArticle(createURL());
-			ListView list = (ListView)findViewById(R.id.ListView01);
-			ArrayList<ListItem> arrayList = new ArrayList<ListItem>();
-			for(int i=0;i< mArticleNum;i++){
-				arrayList.add(new ListItem(mArticleTitle[i],mArticleURL[i],mArticleOverview[i]));
-			}
-			list.setAdapter(new ListArrayAdapter(this,arrayList));
-	  }
-
-	    private void setSecondScreenContent() {
-			varWebView =(WebView)findViewById(R.id.webview);
-			varWebView.setWebViewClient(new CustomBrowserClient());
-			varWebView.getSettings().setJavaScriptEnabled(true);
-	    }
 
 	public String createURL(){
 		String apiURL = "http://news.yahooapis.jp/NewsWebService/V2/topics?";
@@ -192,10 +156,8 @@ public class MainActivity extends Activity implements OnInitListener{
 			return true;
 		}
 	}
-
 	public boolean onCreateOptionsMenu(Menu menu){
 		super.onCreateOptionsMenu(menu);
-
 		for(int i=0;i < mArticleNum ;i++){
 			menu.add(0,i,i,mArticleTitle[i]);
 		}
@@ -204,23 +166,14 @@ public class MainActivity extends Activity implements OnInitListener{
 	public boolean onOptionsItemSelected(MenuItem item){
 		super.onOptionsItemSelected(item);
 		int iid=item.getItemId();
-		setScreenContent(R.layout.webview);
 		for(int i=0;i < mArticleNum ;i++){
 			if(i==iid){
-				varWebView.loadUrl(mArticleURL[i]);
+				Intent intent = new Intent("android.intent.action.VIEW",Uri.parse(mArticleURL[i]));
+		   		startActivity(intent);
 			}
 		}
 		return true;
 	}
-	public boolean onKeyDown(int keyCode, KeyEvent event){
-		if ((keyCode==KeyEvent.KEYCODE_BACK)&&varWebView.canGoBack()){
-			varWebView.goBack();
-			return true;
-		}
-		return super.onKeyDown(keyCode,event);
-	}
-
-
 
 	public class ListArrayAdapter extends ArrayAdapter<ListItem> implements View.OnClickListener {
 		private ArrayList<ListItem> listItem;
